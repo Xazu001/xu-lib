@@ -2,10 +2,15 @@ import type { EFunctionsInputs } from "./base";
 
 type ValidatorInput = EFunctionsInputs;
 
+type ErrorCheckerOptions = {
+  customMissingMessage?: `${string} [field] ${string}`;
+};
+
 export const errorChecker = (
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   obj: Record<string, any>,
-  err: ValidatorInput
+  err: ValidatorInput,
+  options?: ErrorCheckerOptions
 ): Record<string, string> => {
   const errors: Record<string, string> = {};
 
@@ -19,7 +24,9 @@ export const errorChecker = (
 
         if (checkers?.optional && checkers.optional(fieldValue) === "false") {
           if (!fieldValue && fieldValue !== 0) {
-            errors[key] = `Key ${field} is missing!`;
+            errors[key] = options?.customMissingMessage
+              ? options.customMissingMessage.replace("[field]", field)
+              : `Key ${field} is missing!`;
           }
           if (fieldValue) {
             if (checkers?.f?.(fieldValue)) {
