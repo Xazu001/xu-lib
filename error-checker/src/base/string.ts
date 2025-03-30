@@ -5,6 +5,7 @@ export type StringCheckers = {
   max: (length: number, message: string) => StringCheckers;
   email: (message: string) => StringCheckers;
   eq: (value: string[], message: string) => StringCheckers;
+  noSpecialChars: (message: string) => StringCheckers;
   optional: () => StringCheckers;
 } & BaseOfFunction;
 
@@ -54,6 +55,16 @@ export function stringBase(name?: string): StringCheckers {
     eq: (value: string[], message: string) => {
       thingsToDo.eq = (v: string) => {
         if (!value.includes(v)) {
+          return message;
+        }
+        return null;
+      };
+      return check;
+    },
+    noSpecialChars: (message: string) => {
+      thingsToDo.noSpecialChars = (v: string) => {
+        const specialCharsRegex = /[^a-zA-Z0-9]/;
+        if (specialCharsRegex.test(v)) {
           return message;
         }
         return null;
