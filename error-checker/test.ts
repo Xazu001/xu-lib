@@ -11,7 +11,7 @@ const everyTest = e.errorChecker(
     }
     ));
 
-// console.log(everyTest)
+console.log(everyTest)
 
 const normalTest = e.errorChecker(
     {
@@ -33,4 +33,4 @@ const normalTest = e.errorChecker(
         },
     })
 
-console.log(normalTest);
+// console.log(normalTest);
