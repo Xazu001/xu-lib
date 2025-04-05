@@ -5,12 +5,8 @@ const stringTest = e.errorChecker({
     username: "jo",
     email: "dupa"
 }, e.forEvery({
-    username: e.string("Username")
-        .min(3)
-        .max(20),
-    email: e.string("Email").email()
-
-
+    username: e.string("Username").min(3),
+    email: e.string("Email").email(),
 }));
 
 console.log(stringTest)

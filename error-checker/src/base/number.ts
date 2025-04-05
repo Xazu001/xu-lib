@@ -3,15 +3,69 @@ import { createValidationResult, typeCheck } from "./base";
 import defaultMessages from "./defaultMessages";
 
 export type NumberCheckers = {
+  /**
+   * Validates if number is at least equal to provided minimum
+   * @param min - Minimum value
+   * @param message - Optional custom error message
+   * @returns NumberCheckers instance for chaining
+   */
   min: (min: number, message?: string) => NumberCheckers;
+  /**
+   * Validates if number is at most equal to provided maximum
+   * @param max - Maximum value
+   * @param message - Optional custom error message
+   * @returns NumberCheckers instance for chaining
+   */
   max: (max: number, message?: string) => NumberCheckers;
+  /**
+   * Validates if number is positive (greater than zero)
+   * @param message - Optional custom error message
+   * @returns NumberCheckers instance for chaining
+   */
   positive: (message?: string) => NumberCheckers;
+  /**
+   * Validates if number is negative (less than zero)
+   * @param message - Optional custom error message
+   * @returns NumberCheckers instance for chaining
+   */
   negative: (message?: string) => NumberCheckers;
+  /**
+   * Validates if number is an integer
+   * @param message - Optional custom error message
+   * @returns NumberCheckers instance for chaining
+   */
   int: (message?: string) => NumberCheckers;
+  /**
+   * Validates if number has exactly the specified decimal places
+   * @param places - Number of decimal places required
+   * @param message - Optional custom error message
+   * @returns NumberCheckers instance for chaining
+   */
   decimal: (places: number, message?: string) => NumberCheckers;
+  /**
+   * Validates if number is a multiple of the provided factor
+   * @param factor - Number to check divisibility against
+   * @param message - Optional custom error message
+   * @returns NumberCheckers instance for chaining
+   */
   multipleOf: (factor: number, message?: string) => NumberCheckers;
+  /**
+   * Validates if number is within the specified range (inclusive)
+   * @param min - Minimum value of the range
+   * @param max - Maximum value of the range
+   * @param message - Optional custom error message
+   * @returns NumberCheckers instance for chaining
+   */
   range: (min: number, max: number, message?: string) => NumberCheckers;
+  /**
+   * Makes this validator optional
+   * @returns NumberCheckers instance for chaining
+   */
   optional: () => NumberCheckers;
+  /**
+   * Returns a ValidatorMap instance which can be validated
+   * @returns ValidatorMap instance
+   */
   validate: () => ValidatorMap;
 };
 
@@ -19,6 +73,11 @@ const isNumber: TypeGuard<number> = (value: unknown): value is number => {
   return typeof value === "number" && !isNaN(value);
 };
 
+/**
+ * Checker for number validators
+ * @param name name of the field
+ * @returns NumberCheckers instance
+ */
 export function numberBase(name?: string): NumberCheckers {
   let optional = false;
 

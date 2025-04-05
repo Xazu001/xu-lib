@@ -3,10 +3,35 @@ import { createValidationResult, typeCheck } from "./base";
 import defaultMessages from "./defaultMessages";
 
 export type ArrayValidator<T = unknown> = {
+  /**
+   * Validates each item in the array using provided validator
+   * @param vb - Base checker for array items
+   * @returns ArrayValidator instance for chaining
+   */
   value: (vb: BaseChecker) => ArrayValidator<T>;
+  /**
+   * Validates if array length is at least equal to provided length
+   * @param length - Minimal length of the array
+   * @param message - Optional custom error message
+   * @returns ArrayValidator instance for chaining
+   */
   minLength: (length: number, message?: string) => ArrayValidator<T>;
+  /**
+   * Validates if array length is at most equal to provided length
+   * @param length - Maximal length of the array
+   * @param message - Optional custom error message
+   * @returns ArrayValidator instance for chaining
+   */
   maxLength: (length: number, message?: string) => ArrayValidator<T>;
+  /**
+   * Makes this validator optional
+   * @returns ArrayValidator instance for chaining
+   */
   optional: () => ArrayValidator<T>;
+  /**
+   * Returns a ValidatorMap instance which can be validated
+   * @returns ValidatorMap instance
+   */
   validate: () => ValidatorMap;
 };
 
@@ -14,6 +39,11 @@ const isArray: TypeGuard<unknown[]> = (value: unknown): value is unknown[] => {
   return Array.isArray(value);
 };
 
+/**
+ * Checker for array validators
+ * @param name name of the field
+ * @returns ArrayValidator instance
+ */
 export function arrayBase<T = unknown>(name?: string): ArrayValidator<T> {
   let optional = false;
   let validators: ValidatorMap[] = [];

@@ -3,8 +3,21 @@ import { createValidationResult, typeCheck } from "./base";
 import defaultMessages from "./defaultMessages";
 
 export type ObjectValidator<T = Record<string, unknown>> = {
+  /**
+   * Validates object fields using provided validators
+   * @param vb - Record of field validators
+   * @returns ObjectValidator instance for chaining
+   */
   value: (vb: Record<string, BaseChecker>) => ObjectValidator<T>;
+  /**
+   * Makes this validator optional
+   * @returns ObjectValidator instance for chaining
+   */
   optional: () => ObjectValidator<T>;
+  /**
+   * Returns a ValidatorMap instance which can be validated
+   * @returns ValidatorMap instance
+   */
   validate: () => ValidatorMap;
 };
 
@@ -12,6 +25,11 @@ const isObject: TypeGuard<Record<string, unknown>> = (value: unknown): value is 
   return typeof value === "object" && value !== null && !Array.isArray(value);
 };
 
+/**
+ * Checker for object validators
+ * @param name name of the field
+ * @returns ObjectValidator instance
+ */
 export function objectBase<T = Record<string, unknown>>(name?: string): ObjectValidator<T> {
   let optional = false;
   let validators: ValidatorMap[] = [];
