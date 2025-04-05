@@ -13,6 +13,21 @@ export const errorChecker = (
 ): Record<string, string> => {
   const errors: Record<string, string> = {};
 
+  // Get all declared fields from validators
+  const declaredFields = new Set<string>();
+  for (const value of Object.values(err)) {
+    for (const field of Object.keys(value)) {
+      declaredFields.add(field);
+    }
+  }
+
+  // Check for additional undeclared fields
+  const additionalFields = Object.keys(obj).filter(field => !declaredFields.has(field));
+  if (additionalFields.length > 0) {
+    errors.general = `Found undeclared fields: ${additionalFields.join(", ")}. Only declared fields are allowed.`;
+    return errors;
+  }
+
   for (const [key, value] of Object.entries(err)) {
     for (const [field, validator] of Object.entries(value)) {
       const validatorInstance = validator;
