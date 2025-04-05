@@ -1,4 +1,4 @@
-import type { EFunctionsInputs } from "./base";
+import type { EFunctionsInputs, ValidationResult } from "./base";
 
 type ValidatorInput = EFunctionsInputs;
 
@@ -7,8 +7,7 @@ type ErrorCheckerOptions = {
 };
 
 export const errorChecker = (
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  obj: Record<string, any>,
+  obj: Record<string, unknown>,
   err: ValidatorInput,
   options?: ErrorCheckerOptions
 ): Record<string, string> => {
@@ -21,61 +20,37 @@ export const errorChecker = (
 
       if (validatorInstance) {
         const checkers = validatorInstance.validate();
+        const isOptional = checkers?.optional?.(fieldValue) === "true";
 
-        if (checkers?.optional && checkers.optional(fieldValue) === "false") {
-          if (!fieldValue && fieldValue !== 0) {
-            errors[key] = options?.customMissingMessage
-              ? options.customMissingMessage.replace("[field]", field)
-              : `Key ${field} is missing!`;
-          }
-          if (fieldValue) {
-            if (checkers?.f?.(fieldValue)) {
-              const result = checkers?.f?.(fieldValue);
-              if (typeof result === "string") {
-                errors[key] = result;
-              }
-            }
-            if (!checkers?.f?.(fieldValue)) {
-              for (const check of Object.values(checkers)) {
-                if (check) {
-                  const checkerResult = check(fieldValue);
+        // Handle required fields that are missing
+        if (!isOptional && (fieldValue === undefined || fieldValue === null)) {
+          errors[key] = options?.customMissingMessage
+            ? options.customMissingMessage.replace("[field]", field)
+            : `Key ${field} is missing!`;
+          continue;
+        }
 
-                  if (
-                    checkerResult &&
-                    checkerResult !== "false" &&
-                    typeof checkerResult === "string"
-                  ) {
-                    errors[key] = checkerResult;
-                  }
-                }
-              }
-            }
+        // Skip validation for optional fields that are not provided
+        if (isOptional && (fieldValue === undefined || fieldValue === null)) {
+          continue;
+        }
+
+        // Run base type validation
+        if (checkers?.f) {
+          const result = checkers.f(fieldValue);
+          if (isValidationResult(result) && !result.isValid && result.message) {
+            errors[key] = result.message;
+            continue;
           }
         }
 
-        if (checkers?.optional && checkers.optional(fieldValue) === "true") {
-          if (fieldValue) {
-            if (checkers?.f?.(fieldValue)) {
-              const result = checkers?.f?.(fieldValue);
-              if (typeof result === "string") {
-                errors[key] = result;
-              }
-            }
-            if (!checkers?.f?.(fieldValue)) {
-              for (const check of Object.values(checkers)) {
-                if (check) {
-                  const checkerResult = check(fieldValue);
-
-                  if (
-                    checkerResult &&
-                    checkerResult !== "false" &&
-                    typeof checkerResult === "string" &&
-                    checkerResult !== "true"
-                  ) {
-                    errors[key] = checkerResult;
-                  }
-                }
-              }
+        // Run additional validations
+        for (const [checkName, check] of Object.entries(checkers)) {
+          if (checkName !== 'f' && checkName !== 'optional' && check) {
+            const result = check(fieldValue);
+            if (isValidationResult(result) && !result.isValid && result.message) {
+              errors[key] = result.message;
+              break;
             }
           }
         }
@@ -85,3 +60,15 @@ export const errorChecker = (
 
   return errors;
 };
+
+function isValidationResult(value: unknown): value is ValidationResult {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'isValid' in value &&
+    typeof (value as ValidationResult).isValid === 'boolean' &&
+    'message' in value &&
+    (typeof (value as ValidationResult).message === 'string' ||
+      (value as ValidationResult).message === null)
+  );
+}

@@ -1,38 +1,47 @@
-import type { BaseOfFunction, TypesFunction, ThingsToDo } from "./base";
+import type { BaseOfFunction, BaseChecker, ThingsToDo, ValidationResult, TypeGuard } from "./base";
+import { createValidationResult, typeCheck } from "./base";
 import { errorChecker } from "./index";
 
-export type ArrayCheckers = {
-  value: (vb: TypesFunction) => ArrayCheckers;
-  minLength: (length: number, message: string) => ArrayCheckers;
-  maxLength: (length: number, message: string) => ArrayCheckers;
-  optional: () => ArrayCheckers;
-} & BaseOfFunction;
+export type ArrayCheckers<T = unknown> = {
+  value: (vb: BaseChecker) => ArrayCheckers<T>;
+  minLength: (length: number, message: string) => ArrayCheckers<T>;
+  maxLength: (length: number, message: string) => ArrayCheckers<T>;
+  optional: () => ArrayCheckers<T>;
+} & BaseOfFunction<T[]>;
 
-export function arrayBase(name?: string): ArrayCheckers {
+const isArray: TypeGuard<unknown[]> = (value: unknown): value is unknown[] => {
+  return Array.isArray(value);
+};
+
+export function arrayBase<T = unknown>(name?: string): ArrayCheckers<T> {
   let optional = false;
 
-  const thingsToDo: ThingsToDo = {
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    f: (v: any) => {
-      if (!Array.isArray(v)) {
-        return name
+  const thingsToDo: ThingsToDo<unknown[]> = {
+    f: (v: unknown) => {
+      return typeCheck(
+        v,
+        isArray,
+        name
           ? `The field '${name}' must be an array!`
-          : "One of the required fields must be an array!";
-      }
-      return null;
+          : "One of the required fields must be an array!"
+      );
     },
   };
 
-  const check: ArrayCheckers = {
-    value: (vb: TypesFunction) => {
-      const itemThingsToDo: ThingsToDo = vb.validate();
+  const check: ArrayCheckers<T> = {
+    value: (vb: BaseChecker) => {
+      const itemThingsToDo = vb.validate();
 
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      thingsToDo.value = (v: any[]) => {
-        let errorV: string | null = null;
-        for (const item of v) {
+      thingsToDo.value = (v: unknown) => {
+        const arrayCheck = typeCheck(v, isArray, "Value must be an array");
+        if (!arrayCheck.isValid) {
+          return arrayCheck;
+        }
+
+        const arr = v as unknown[];
+        for (const item of arr) {
           const error = errorChecker(
-            { item: item },
+            { item },
             {
               general: {
                 item: vb,
@@ -41,48 +50,57 @@ export function arrayBase(name?: string): ArrayCheckers {
           );
 
           if (error.general) {
-            errorV = error.general;
+            return createValidationResult(false, error.general);
           }
         }
 
-        return errorV;
+        return createValidationResult(true);
       };
 
       return check;
     },
+
     minLength: (length: number, message: string) => {
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      thingsToDo.minLength = (v: any[]) => {
-        if (v.length < length) {
-          return message;
+      thingsToDo.minLength = (v: unknown) => {
+        const arrayCheck = typeCheck(v, isArray, "Value must be an array");
+        if (!arrayCheck.isValid) {
+          return arrayCheck;
         }
-        return null;
+
+        const arr = v as unknown[];
+        if (arr.length < length) {
+          return createValidationResult(false, message);
+        }
+        return createValidationResult(true);
       };
+
       return check;
     },
+
     maxLength: (length: number, message: string) => {
-      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      thingsToDo.maxLength = (v: any[]) => {
-        if (v.length > length) {
-          return message;
+      thingsToDo.maxLength = (v: unknown) => {
+        const arrayCheck = typeCheck(v, isArray, "Value must be an array");
+        if (!arrayCheck.isValid) {
+          return arrayCheck;
         }
-        return null;
+
+        const arr = v as unknown[];
+        if (arr.length > length) {
+          return createValidationResult(false, message);
+        }
+        return createValidationResult(true);
       };
+
       return check;
     },
+
     optional: () => {
       optional = true;
+      thingsToDo.optional = () => "true";
       return check;
     },
-    validate: () => {
-      return {
-        ...thingsToDo,
-        // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-        optional: (v: any) => {
-          return optional ? "true" : "false";
-        },
-      };
-    },
+
+    validate: () => thingsToDo,
   };
 
   return check;

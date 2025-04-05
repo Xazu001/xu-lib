@@ -1,25 +1,48 @@
-import type { StringCheckers as StringFunction } from "./string";
-import type { NumberCheckers as NumberFunction } from "./number";
-import type { ObjectCheckers as ObjectFunction } from "./object";
-import type { AnyCheckers as AnyFunction } from "./any";
-import type { ArrayCheckers as ArrayFunction } from "./array";
+export type ValidationResult = {
+  isValid: boolean;
+  message: string | null;
+};
 
-export interface BaseOfFunction {
-  validate: () => ThingsToDo;
+export type TypeGuard<T> = (value: unknown) => value is T;
+
+export type ValidationFunction<T = unknown> = (v: T) => ValidationResult;
+export type OptionalFunction = (v: unknown) => "true" | "false";
+
+export type ThingsToDo<T> = {
+  f?: ValidationFunction<T>;
+  optional?: OptionalFunction;
+  [key: string]: ValidationFunction<T> | OptionalFunction | undefined;
+};
+
+export type BaseOfFunction<T> = {
+  validate: () => ThingsToDo<T>;
+};
+
+export type BaseChecker<T = unknown> = BaseOfFunction<T>;
+
+export type EFunctionsInputs = {
+  [key: string]: {
+    [key: string]: BaseChecker<any>;
+  };
+};
+
+export function createValidationResult(
+  isValid: boolean,
+  message: string | null = null
+): ValidationResult {
+  return {
+    isValid,
+    message,
+  };
 }
 
-export type BaseThingToDoResult = string | null | "true" | "false"; // wynik checkera / thingToDo
-
-// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export type ThingToDo = (v: any) => BaseThingToDoResult;
-
-export type ThingsToDo = Record<string, ThingToDo>;
-
-export type TypesFunction =
-  | StringFunction
-  | NumberFunction
-  | ObjectFunction
-  | AnyFunction
-  | ArrayFunction;
-
-export type EFunctionsInputs = Record<string, Record<string, TypesFunction>>;
+export function typeCheck<T>(
+  value: unknown,
+  guard: TypeGuard<T>,
+  errorMessage: string
+): ValidationResult {
+  if (guard(value)) {
+    return createValidationResult(true);
+  }
+  return createValidationResult(false, errorMessage);
+}
