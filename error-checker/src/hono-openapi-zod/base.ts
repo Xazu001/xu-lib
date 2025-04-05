@@ -1,7 +1,7 @@
 import type { ZodTypeAny } from "zod";
-import type { ThingsToDo } from "../../src/base/base";
+import type { ValidatorMap } from "../../src/base/base";
 
-export interface BaseOfFunction<T = unknown> {
-  validate: () => ThingsToDo<T>;
+export interface BaseOfFunction {
+  validate: () => ValidatorMap;
   getType: () => ZodTypeAny;
 }

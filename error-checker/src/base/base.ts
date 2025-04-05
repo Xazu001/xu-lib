@@ -19,10 +19,8 @@ export type BaseOfFunction<T> = {
 
 export type BaseChecker<T = unknown> = BaseOfFunction<T>;
 
-export type EFunctionsInputs = {
-  general: Record<string, BaseChecker>;
-  customMissingMessage?: `${string} [field] ${string}`;
-};
+export type EFunctionsInputs = Record<string, Record<string, BaseChecker>>;
+
 
 export function createValidationResult(
   isValid: boolean,

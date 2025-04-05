@@ -1,4 +1,4 @@
-import type { EFunctionsInputs, ValidationResult, ValidatorMap, ValidationFunction } from "./base";
+import type { EFunctionsInputs, ValidationResult, ValidatorMap } from "./base";
 
 type ValidatorInput = EFunctionsInputs;
 
@@ -29,43 +29,36 @@ export function forEvery<T extends object>(validators: {
 export const errorChecker = (
   obj: Record<string, unknown>,
   err: ValidatorInput,
-  options?: {
-    customMissingMessage?: `${string} [field] ${string}`;
-  }
 ): Record<string, string> => {
   const errors: Record<string, string> = {};
 
-  // Check for undeclared fields
-  const declaredFields = new Set(Object.keys(err.general));
-  const inputFields = new Set(Object.keys(obj));
+  // Process each validation group
+  for (const [groupKey, validators] of Object.entries(err)) {
+    // Skip if validators is undefined
+    if (!validators) continue;
 
-  for (const field of inputFields) {
-    if (!declaredFields.has(field)) {
-      errors[field] = `Undeclared field: ${field}`;
-    }
-  }
+    // For each field in the validation group
+    for (const [fieldKey, validator] of Object.entries(validators)) {
+      if (validator) {
+        const validationResult = validator.validate();
 
-  // Validate declared fields
-  for (const [key, validator] of Object.entries(err.general)) {
-    if (validator) {
-      const validationResult = validator.validate();
-      
-      // Skip validation if field is optional and not present
-      if ('optional' in validationResult && !(key in obj)) {
-        continue;
-      }
+        // Skip validation if field is optional and not present
+        if ('optional' in validationResult && !(fieldKey in obj)) {
+          continue;
+        }
 
-      // Validate field value
-      for (const [validatorName, validatorFn] of Object.entries(validationResult)) {
-        // Skip optional validator
-        if (validatorName === 'optional') continue;
+        // Validate field value
+        for (const [validatorName, validatorFn] of Object.entries(validationResult)) {
+          // Skip optional validator
+          if (validatorName === 'optional') continue;
 
-        // Only process validation functions
-        if (typeof validatorFn === 'function') {
-          const result = validatorFn(obj[key]) as ValidationResult;
-          if (!result.isValid) {
-            errors[key] = result.message;
-            break;
+          // Only process validation functions
+          if (typeof validatorFn === 'function') {
+            const result = validatorFn(obj[fieldKey]) as ValidationResult;
+            if (!result.isValid) {
+              errors[fieldKey] = result.message;
+              break;
+            }
           }
         }
       }
