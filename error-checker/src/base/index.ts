@@ -1,72 +1,71 @@
-import type { EFunctionsInputs, ValidationResult } from "./base";
+import type { EFunctionsInputs, ValidationResult, ValidatorMap, ValidationFunction } from "./base";
 
 type ValidatorInput = EFunctionsInputs;
 
-type ErrorCheckerOptions = {
-  customMissingMessage?: `${string} [field] ${string}`;
-};
+export * from "./base";
+export * from "./bool";
+export * from "./number";
+export * from "./string";
+export * from "./array";
+export * from "./object";
+
+// Helper function to wrap validators in a 'general' object
+export function forEvery<T extends object>(validators: {
+  [key in keyof T]?: {
+    validate: () => ValidatorMap;
+  };
+}): {
+  general: {
+    [key in keyof T]?: {
+      validate: () => ValidatorMap;
+    };
+  };
+} {
+  return {
+    general: validators
+  };
+}
 
 export const errorChecker = (
   obj: Record<string, unknown>,
   err: ValidatorInput,
-  options?: ErrorCheckerOptions
+  options?: {
+    customMissingMessage?: `${string} [field] ${string}`;
+  }
 ): Record<string, string> => {
   const errors: Record<string, string> = {};
 
-  // Get all declared fields from validators
-  const declaredFields = new Set<string>();
-  for (const value of Object.values(err)) {
-    for (const field of Object.keys(value)) {
-      declaredFields.add(field);
+  // Check for undeclared fields
+  const declaredFields = new Set(Object.keys(err.general));
+  const inputFields = new Set(Object.keys(obj));
+
+  for (const field of inputFields) {
+    if (!declaredFields.has(field)) {
+      errors[field] = `Undeclared field: ${field}`;
     }
   }
 
-  // Check for additional undeclared fields
-  const additionalFields = Object.keys(obj).filter(field => !declaredFields.has(field));
-  if (additionalFields.length > 0) {
-    errors.general = `Found undeclared fields: ${additionalFields.join(", ")}. Only declared fields are allowed.`;
-    return errors;
-  }
+  // Validate declared fields
+  for (const [key, validator] of Object.entries(err.general)) {
+    if (validator) {
+      const validationResult = validator.validate();
+      
+      // Skip validation if field is optional and not present
+      if ('optional' in validationResult && !(key in obj)) {
+        continue;
+      }
 
-  for (const [key, value] of Object.entries(err)) {
-    for (const [field, validator] of Object.entries(value)) {
-      const validatorInstance = validator;
-      const fieldValue = obj[field];
+      // Validate field value
+      for (const [validatorName, validatorFn] of Object.entries(validationResult)) {
+        // Skip optional validator
+        if (validatorName === 'optional') continue;
 
-      if (validatorInstance) {
-        const checkers = validatorInstance.validate();
-        const isOptional = checkers?.optional?.(fieldValue) === "true";
-
-        // Handle required fields that are missing
-        if (!isOptional && (fieldValue === undefined || fieldValue === null)) {
-          errors[key] = options?.customMissingMessage
-            ? options.customMissingMessage.replace("[field]", field)
-            : `Key ${field} is missing!`;
-          continue;
-        }
-
-        // Skip validation for optional fields that are not provided
-        if (isOptional && (fieldValue === undefined || fieldValue === null)) {
-          continue;
-        }
-
-        // Run base type validation
-        if (checkers?.f) {
-          const result = checkers.f(fieldValue);
-          if (isValidationResult(result) && !result.isValid && result.message) {
+        // Only process validation functions
+        if (typeof validatorFn === 'function') {
+          const result = validatorFn(obj[key]) as ValidationResult;
+          if (!result.isValid) {
             errors[key] = result.message;
-            continue;
-          }
-        }
-
-        // Run additional validations
-        for (const [checkName, check] of Object.entries(checkers)) {
-          if (checkName !== 'f' && checkName !== 'optional' && check) {
-            const result = check(fieldValue);
-            if (isValidationResult(result) && !result.isValid && result.message) {
-              errors[key] = result.message;
-              break;
-            }
+            break;
           }
         }
       }

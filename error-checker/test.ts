@@ -1,13 +1,16 @@
 import * as e from "./src/index";
 
-const errorChecker = e.errorChecker({
-    name: "Jeeee",
-    x: "test"
-}, {
-    general: {
-        name: e.string("Name").min(2, "Name too short!").max(50, "Name too long!"),
-        x: e.any("X").optional()
-    }
-});
+// Test string validators
+const stringTest = e.errorChecker({
+    username: "jo",
+    email: "dupa"
+}, e.forEvery({
+    username: e.string("Username")
+        .min(3, "Username too short")
+        .max(20, "Username too long"),
+    email: e.string("Email").email("Invalid email format"),
 
-console.log(errorChecker);
+
+}));
+
+console.log(stringTest)

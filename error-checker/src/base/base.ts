@@ -1,48 +1,43 @@
 export type ValidationResult = {
   isValid: boolean;
-  message: string | null;
+  message: string;
 };
 
 export type TypeGuard<T> = (value: unknown) => value is T;
 
-export type ValidationFunction<T = unknown> = (v: T) => ValidationResult;
-export type OptionalFunction = (v: unknown) => "true" | "false";
+export type ValidationFunction = (value: unknown) => ValidationResult;
+export type OptionalFunction = () => "true";
 
-export type ThingsToDo<T> = {
-  f?: ValidationFunction<T>;
+export type ValidatorMap = {
+  f: ValidationFunction;
   optional?: OptionalFunction;
-  [key: string]: ValidationFunction<T> | OptionalFunction | undefined;
 };
 
 export type BaseOfFunction<T> = {
-  validate: () => ThingsToDo<T>;
+  validate: () => ValidatorMap;
 };
 
 export type BaseChecker<T = unknown> = BaseOfFunction<T>;
 
 export type EFunctionsInputs = {
-  [key: string]: {
-    [key: string]: BaseChecker<any>;
-  };
+  general: Record<string, BaseChecker>;
+  customMissingMessage?: `${string} [field] ${string}`;
 };
 
 export function createValidationResult(
   isValid: boolean,
-  message: string | null = null
+  message: string = ""
 ): ValidationResult {
-  return {
-    isValid,
-    message,
-  };
+  return { isValid, message };
 }
 
 export function typeCheck<T>(
   value: unknown,
   guard: TypeGuard<T>,
-  errorMessage: string
+  message: string
 ): ValidationResult {
   if (guard(value)) {
-    return createValidationResult(true);
+    return createValidationResult(true, "");
   }
-  return createValidationResult(false, errorMessage);
+  return createValidationResult(false, message);
 }
