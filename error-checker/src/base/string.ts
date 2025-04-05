@@ -1,18 +1,19 @@
-import type { BaseOfFunction, ValidatorMap, ValidationResult, TypeGuard } from "./base";
+import type { ValidatorMap, ValidationResult, TypeGuard } from "./base";
 import { createValidationResult, typeCheck } from "./base";
+import defaultMessages from "./defaultMessages";
 
 export type StringValidator = {
-  min: (length: number, message: string) => StringValidator;
-  max: (length: number, message: string) => StringValidator;
-  email: (message: string) => StringValidator;
-  eq: (value: string, message: string) => StringValidator;
-  neq: (value: string, message: string) => StringValidator;
-  regex: (pattern: RegExp, message: string) => StringValidator;
-  includes: (value: string, message: string) => StringValidator;
-  startsWith: (value: string, message: string) => StringValidator;
-  endsWith: (value: string, message: string) => StringValidator;
-  url: (message: string) => StringValidator;
-  uuid: (message: string) => StringValidator;
+  min: (length: number, message?: string) => StringValidator;
+  max: (length: number, message?: string) => StringValidator;
+  email: (message?: string) => StringValidator;
+  eq: (value: string, message?: string) => StringValidator;
+  neq: (value: string, message?: string) => StringValidator;
+  regex: (pattern: RegExp, message?: string) => StringValidator;
+  includes: (value: string, message?: string) => StringValidator;
+  startsWith: (value: string, message?: string) => StringValidator;
+  endsWith: (value: string, message?: string) => StringValidator;
+  url: (message?: string) => StringValidator;
+  uuid: (message?: string) => StringValidator;
   optional: () => StringValidator;
   validate: () => ValidatorMap;
 };
@@ -26,12 +27,13 @@ export function stringBase(name?: string): StringValidator {
   let validators: ValidatorMap[] = [];
 
   const check: StringValidator = {
-    min: (length: number, message: string) => {
+    min: (length: number, message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const str = v as string;
           if (str.length < length) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.min.replace('[.]', name || 'Value').replace('[min]', length.toString());
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true, "");
         }
@@ -39,12 +41,13 @@ export function stringBase(name?: string): StringValidator {
       return check;
     },
 
-    max: (length: number, message: string) => {
+    max: (length: number, message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const str = v as string;
           if (str.length > length) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.max.replace('[.]', name || 'Value').replace('[max]', length.toString());
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true, "");
         }
@@ -52,7 +55,7 @@ export function stringBase(name?: string): StringValidator {
       return check;
     },
 
-    email: (message: string) => {
+    email: (message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const stringCheck = typeCheck(v, isString, "Value must be a string");
@@ -63,7 +66,8 @@ export function stringBase(name?: string): StringValidator {
           const str = v as string;
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(str)) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.email.replace('[.]', name || 'Value');
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true);
         }
@@ -71,12 +75,13 @@ export function stringBase(name?: string): StringValidator {
       return check;
     },
 
-    eq: (value: string, message: string) => {
+    eq: (value: string, message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const str = v as string;
           if (str !== value) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.eq.replace('[.]', name || 'Value').replace('[value]', value);
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true, "");
         }
@@ -84,12 +89,13 @@ export function stringBase(name?: string): StringValidator {
       return check;
     },
 
-    neq: (value: string, message: string) => {
+    neq: (value: string, message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const str = v as string;
           if (str === value) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.neq.replace('[.]', name || 'Value').replace('[value]', value);
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true, "");
         }
@@ -97,12 +103,13 @@ export function stringBase(name?: string): StringValidator {
       return check;
     },
 
-    regex: (pattern: RegExp, message: string) => {
+    regex: (pattern: RegExp, message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const str = v as string;
           if (!pattern.test(str)) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.regex.replace('[.]', name || 'Value').replace('[pattern]', pattern.toString());
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true, "");
         }
@@ -110,12 +117,13 @@ export function stringBase(name?: string): StringValidator {
       return check;
     },
 
-    includes: (value: string, message: string) => {
+    includes: (value: string, message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const str = v as string;
           if (!str.includes(value)) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.includes.replace('[.]', name || 'Value').replace('[value]', value);
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true, "");
         }
@@ -123,12 +131,13 @@ export function stringBase(name?: string): StringValidator {
       return check;
     },
 
-    startsWith: (value: string, message: string) => {
+    startsWith: (value: string, message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const str = v as string;
           if (!str.startsWith(value)) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.startsWith.replace('[.]', name || 'Value').replace('[value]', value);
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true, "");
         }
@@ -136,12 +145,13 @@ export function stringBase(name?: string): StringValidator {
       return check;
     },
 
-    endsWith: (value: string, message: string) => {
+    endsWith: (value: string, message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const str = v as string;
           if (!str.endsWith(value)) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.endsWith.replace('[.]', name || 'Value').replace('[value]', value);
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true, "");
         }
@@ -149,7 +159,7 @@ export function stringBase(name?: string): StringValidator {
       return check;
     },
 
-    url: (message: string) => {
+    url: (message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const str = v as string;
@@ -157,14 +167,15 @@ export function stringBase(name?: string): StringValidator {
             new URL(str);
             return createValidationResult(true, "");
           } catch {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.url.replace('[.]', name || 'Value');
+            return createValidationResult(false, message || defaultMsg);
           }
         }
       });
       return check;
     },
 
-    uuid: (message: string) => {
+    uuid: (message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const stringCheck = typeCheck(v, isString, "Value must be a string");
@@ -175,7 +186,8 @@ export function stringBase(name?: string): StringValidator {
           const str = v as string;
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
           if (!uuidRegex.test(str)) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.string.uuid.replace('[.]', name || 'Value');
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true);
         }

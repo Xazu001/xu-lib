@@ -6,9 +6,9 @@ const stringTest = e.errorChecker({
     email: "dupa"
 }, e.forEvery({
     username: e.string("Username")
-        .min(3, "Username too short")
-        .max(20, "Username too long"),
-    email: e.string("Email").email("Invalid email format"),
+        .min(3)
+        .max(20),
+    email: e.string("Email").email()
 
 
 }));

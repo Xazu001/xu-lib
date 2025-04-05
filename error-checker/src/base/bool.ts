@@ -1,5 +1,6 @@
 import type { BaseOfFunction, ValidatorMap, ValidationResult, TypeGuard } from "./base";
-import { createValidationResult, typeCheck } from "./base";
+import { typeCheck } from "./base";
+import defaultMessages from "./defaultMessages";
 
 export type BoolCheckers = {
   optional: () => BoolCheckers;
@@ -24,9 +25,7 @@ export function boolBase(name?: string): BoolCheckers {
           return typeCheck(
             v,
             isBool,
-            name
-              ? `The field '${name}' must be a boolean!`
-              : "One of the required fields must be a boolean!"
+            defaultMessages.bool.base.replace('[.]', name || 'Value')
           );
         }
       };

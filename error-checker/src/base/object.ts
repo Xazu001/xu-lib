@@ -1,5 +1,6 @@
 import type { BaseChecker, ValidationResult, TypeGuard, ValidatorMap } from "./base";
 import { createValidationResult, typeCheck } from "./base";
+import defaultMessages from "./defaultMessages";
 
 export type ObjectValidator<T = Record<string, unknown>> = {
   value: (vb: Record<string, BaseChecker>) => ObjectValidator<T>;
@@ -31,9 +32,7 @@ export function objectBase<T = Record<string, unknown>>(name?: string): ObjectVa
           const objectCheck = typeCheck(
             v,
             isObject,
-            name
-              ? `The field '${name}' must be an object!`
-              : "One of the required fields must be an object!"
+            defaultMessages.object.base.replace('[.]', name || 'Value')
           );
           if (!objectCheck.isValid) {
             return objectCheck;
@@ -45,7 +44,8 @@ export function objectBase<T = Record<string, unknown>>(name?: string): ObjectVa
             const validatorMap = validator.validate();
             const result = validatorMap.f(value);
             if (!result.isValid) {
-              return createValidationResult(false, `Field '${key}': ${result.message}`);
+              const defaultMsg = defaultMessages.object.field.replace('[field]', key).replace('[message]', result.message);
+              return createValidationResult(false, defaultMsg);
             }
           }
 

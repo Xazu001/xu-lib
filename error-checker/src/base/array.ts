@@ -1,10 +1,11 @@
 import type { BaseChecker, ValidationResult, TypeGuard, ValidatorMap } from "./base";
 import { createValidationResult, typeCheck } from "./base";
+import defaultMessages from "./defaultMessages";
 
 export type ArrayValidator<T = unknown> = {
   value: (vb: BaseChecker) => ArrayValidator<T>;
-  minLength: (length: number, message: string) => ArrayValidator<T>;
-  maxLength: (length: number, message: string) => ArrayValidator<T>;
+  minLength: (length: number, message?: string) => ArrayValidator<T>;
+  maxLength: (length: number, message?: string) => ArrayValidator<T>;
   optional: () => ArrayValidator<T>;
   validate: () => ValidatorMap;
 };
@@ -24,12 +25,13 @@ export function arrayBase<T = unknown>(name?: string): ArrayValidator<T> {
       return check;
     },
 
-    minLength: (length: number, message: string) => {
+    minLength: (length: number, message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const arr = v as unknown[];
           if (arr.length < length) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.array.minLength.replace('[.]', name || 'Value').replace('[length]', length.toString());
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true, "");
         }
@@ -37,12 +39,13 @@ export function arrayBase<T = unknown>(name?: string): ArrayValidator<T> {
       return check;
     },
 
-    maxLength: (length: number, message: string) => {
+    maxLength: (length: number, message?: string) => {
       validators.push({
         f: (v: unknown): ValidationResult => {
           const arr = v as unknown[];
           if (arr.length > length) {
-            return createValidationResult(false, message);
+            const defaultMsg = defaultMessages.array.maxLength.replace('[.]', name || 'Value').replace('[length]', length.toString());
+            return createValidationResult(false, message || defaultMsg);
           }
           return createValidationResult(true, "");
         }
@@ -61,9 +64,7 @@ export function arrayBase<T = unknown>(name?: string): ArrayValidator<T> {
           const arrayCheck = typeCheck(
             v,
             isArray,
-            name
-              ? `The field '${name}' must be an array!`
-              : "One of the required fields must be an array!"
+            defaultMessages.array.base.replace('[.]', name || 'Value')
           );
           if (!arrayCheck.isValid) {
             return arrayCheck;
@@ -75,7 +76,8 @@ export function arrayBase<T = unknown>(name?: string): ArrayValidator<T> {
             for (let i = 0; i < arr.length; i++) {
               const result = validatorMap.f(arr[i]);
               if (!result.isValid) {
-                return createValidationResult(false, `Item at index ${i}: ${result.message}`);
+                const defaultMsg = defaultMessages.array.item.replace('[index]', i.toString()).replace('[message]', result.message);
+                return createValidationResult(false, defaultMsg);
               }
             }
           }
