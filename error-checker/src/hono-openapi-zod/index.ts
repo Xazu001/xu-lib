@@ -51,3 +51,4 @@ export { bool } from "./bool";
 export { number } from "./number";
 export { object } from "./object";
 export { string } from "./string";
+export { errorChecker } from "../base/index";
