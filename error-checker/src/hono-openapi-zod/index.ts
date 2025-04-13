@@ -9,8 +9,13 @@ import type { EFunctionsInputs } from "../base/base";
 import type { ResolverResult } from "hono-openapi";
 import type { ZodTypeAny } from "zod";
 
-type ValidatorInput = EFunctionsInputs & {
-  getType: () => ZodTypeAny;
+type ValidatorField = {
+  getType?: () => ZodTypeAny;
+  validate?: () => any;
+};
+
+type ValidatorInput = {
+  [key: string]: ValidatorField | Record<string, ValidatorField>;
 };
 
 export const validator = (
@@ -20,11 +25,18 @@ export const validator = (
   const validationSchema: Record<string, z.ZodTypeAny> = {};
 
   for (const [key, value] of Object.entries(err)) {
-    for (const [field, validator] of Object.entries(value)) {
-      const validatorInstance = validator;
-      if (validatorInstance?.getType()) {
-        validationSchema[field] = validatorInstance.getType();
+    // Handle nested structure if value is an object with fields
+    if (typeof value === 'object' && value !== null && !('getType' in value)) {
+      // This is a nested structure like errorInput
+      for (const [field, validator] of Object.entries(value as Record<string, ValidatorField>)) {
+        const validatorInstance = validator;
+        if (validatorInstance?.getType) {
+          validationSchema[field] = validatorInstance.getType();
+        }
       }
+    } else if ((value as ValidatorField)?.getType) {
+      // Direct validator
+      validationSchema[key] = (value as ValidatorField).getType!();
     }
   }
 
@@ -37,7 +49,29 @@ export function resolver(err: ValidatorInput): ResolverResult {
   const validationSchema: Record<string, z.ZodTypeAny> = {};
 
   for (const [key, value] of Object.entries(err)) {
-    validationSchema[key] = z.string().optional();
+    // Handle nested structure if value is an object with fields
+    if (typeof value === 'object' && value !== null && !('getType' in value)) {
+      // This is a nested structure like errorInput
+      const nestedSchema: Record<string, z.ZodTypeAny> = {};
+      
+      for (const [field, validator] of Object.entries(value as Record<string, ValidatorField>)) {
+        const validatorInstance = validator;
+        if (validatorInstance?.getType) {
+          nestedSchema[field] = validatorInstance.getType();
+        }
+      }
+      
+      if (Object.keys(nestedSchema).length > 0) {
+        validationSchema[key] = z.object(nestedSchema);
+      } else {
+        validationSchema[key] = z.string().optional();
+      }
+    } else if ((value as ValidatorField)?.getType) {
+      // Direct validator
+      validationSchema[key] = (value as ValidatorField).getType!();
+    } else {
+      validationSchema[key] = z.string().optional();
+    }
   }
 
   const schema = z.object(validationSchema);
